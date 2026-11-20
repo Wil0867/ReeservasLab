@@ -20,6 +20,7 @@ public class NotificacionController {
 
     private final NotificacionUseCase notificacionUseCase;
     private final MapperNotificacion mapperNotificacion;
+    private final EnvioCorreoAsincrono envioCorreoAsincrono;
 
     // ------------------------- Consulta y borrado básicos -------------------------
 
@@ -41,11 +42,13 @@ public class NotificacionController {
 
     // ------------------- APIs de negocio (no CRUD) -------------------
 
-    // 1. Enviar un correo y dejarlo en el historial (el estado dice si salió: ENVIADA o FALLIDA)
+    // 1. Registrar un correo (PENDIENTE) y enviarlo en segundo plano. Responde 202 sin esperar al proveedor;
+    //    el resultado (ENVIADA o FALLIDA) se consulta después con /buscar/{idNotificacion}
     @PostMapping("/enviar")
     public ResponseEntity<Notificacion> enviar(@RequestBody NotificacionRequest request) {
-        Notificacion resultado = notificacionUseCase.enviar(mapperNotificacion.toNotificacion(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
+        Notificacion registrada = notificacionUseCase.enviar(mapperNotificacion.toNotificacion(request));
+        envioCorreoAsincrono.procesar(registrada.getIdNotificacion());
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(registrada);
     }
 
     // 2. Reintentar una notificación fallida (máximo 3 intentos)

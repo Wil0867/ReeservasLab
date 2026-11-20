@@ -13,7 +13,11 @@ import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,6 +60,40 @@ class ExternalGatewaysTest {
         assertEquals(1L, usuario.idUsuario());
         assertEquals("Ana", usuario.nombre());
         assertTrue(usuario.activo());
+        servidor.verify();
+    }
+
+    @Test
+    void usuarioSeGuardaEnCacheTreintaSegundos() {
+        // Solo dos llamadas reales: la primera y la que ocurre después de vencer la caché
+        servidor.expect(ExpectedCount.twice(), requestTo(BASE + "/api/usuarios/1/validar"))
+                .andRespond(withSuccess("{\"idUsuario\":1,\"nombre\":\"Ana\",\"activo\":true}",
+                        MediaType.APPLICATION_JSON));
+        Instant inicio = Instant.parse("2026-11-20T12:00:00Z");
+        Instant[] ahora = {inicio};
+        Clock reloj = new Clock() {
+            @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+            @Override public Clock withZone(ZoneId zone) { return this; }
+            @Override public Instant instant() { return ahora[0]; }
+        };
+        UsuarioGatewayImpl gateway = new UsuarioGatewayImpl(restClient, reloj);
+
+        assertTrue(gateway.consultar(1L).isPresent());                  // llamada real
+        ahora[0] = inicio.plusSeconds(29);
+        assertEquals("Ana", gateway.consultar(1L).orElseThrow().nombre()); // desde la caché
+        ahora[0] = inicio.plusSeconds(31);
+        assertTrue(gateway.consultar(1L).isPresent());                  // venció: llamada real
+        servidor.verify();
+    }
+
+    @Test
+    void usuarioInexistenteNoSeGuardaEnCache() {
+        servidor.expect(ExpectedCount.twice(), requestTo(BASE + "/api/usuarios/9/validar"))
+                .andRespond(withResourceNotFound());
+        UsuarioGatewayImpl gateway = new UsuarioGatewayImpl(restClient);
+
+        assertTrue(gateway.consultar(9L).isEmpty());
+        assertTrue(gateway.consultar(9L).isEmpty());
         servidor.verify();
     }
 

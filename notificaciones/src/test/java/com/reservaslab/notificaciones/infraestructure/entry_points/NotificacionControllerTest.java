@@ -24,24 +24,28 @@ import static org.mockito.Mockito.when;
 class NotificacionControllerTest {
 
     private NotificacionUseCase useCase;
+    private EnvioCorreoAsincrono envio;
     private NotificacionController controller;
     private final Notificacion notificacion = new Notificacion();
 
     @BeforeEach
     void preparar() {
         useCase = mock(NotificacionUseCase.class);
-        controller = new NotificacionController(useCase, new MapperNotificacion());
+        envio = mock(EnvioCorreoAsincrono.class);
+        controller = new NotificacionController(useCase, new MapperNotificacion(), envio);
     }
 
     @Test
-    void enviarResponde201() {
+    void enviarResponde202YDejaElEnvioEnSegundoPlano() {
+        notificacion.setIdNotificacion(7L);
         when(useCase.enviar(any())).thenReturn(notificacion);
 
         ResponseEntity<Notificacion> respuesta = controller.enviar(
                 new NotificacionRequest(1L, null, "Asunto", "Mensaje", TipoNotificacion.GENERAL));
 
-        assertEquals(HttpStatus.CREATED, respuesta.getStatusCode());
+        assertEquals(HttpStatus.ACCEPTED, respuesta.getStatusCode());
         assertSame(notificacion, respuesta.getBody());
+        verify(envio).procesar(7L);
     }
 
     @Test
@@ -68,7 +72,7 @@ class NotificacionControllerTest {
 
     @Test
     void listadosYEstadisticas() {
-        EstadisticasNotificaciones estadisticas = new EstadisticasNotificaciones(1, 1, 0, 1, Map.of());
+        EstadisticasNotificaciones estadisticas = new EstadisticasNotificaciones(1, 1, 0, 0, 1, Map.of());
         when(useCase.listarPorUsuario(1L)).thenReturn(List.of(notificacion));
         when(useCase.listarNoLeidas(1L)).thenReturn(List.of(notificacion));
         when(useCase.listarFallidas()).thenReturn(List.of());

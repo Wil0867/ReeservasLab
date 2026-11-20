@@ -37,7 +37,8 @@ public class NotificacionUseCase {
     // ---------------------------------------------------------------
 
     /**
-     * Envía el correo y SIEMPRE deja registro: ENVIADA si salió, FALLIDA si el proveedor lo rechazó.
+     * Valida y registra la notificación como PENDIENTE, sin esperar al proveedor de correo.
+     * El envío real lo hace después procesarEnvio(), en segundo plano.
      * Si no llega destinatario, se usa el correo que el usuario tiene registrado en Usuarios.
      */
     public Notificacion enviar(Notificacion solicitud) {
@@ -57,9 +58,23 @@ public class NotificacionUseCase {
         nueva.setLeida(false);
         nueva.setIntentos(0);
         nueva.setFechaCreacion(LocalDateTime.now(clock));
+        nueva.setEstado(EstadoNotificacion.PENDIENTE);
+        nueva.setDetalleError(null);
 
-        intentarEnvio(nueva);
         return notificacionGateway.guardar(nueva);
+    }
+
+    /**
+     * Envía el correo de una notificación PENDIENTE y SIEMPRE deja registro del resultado:
+     * ENVIADA si el proveedor la aceptó, FALLIDA si la rechazó. Si ya no está pendiente, no hace nada.
+     */
+    public Notificacion procesarEnvio(Long idNotificacion) {
+        Notificacion notificacion = buscar(idNotificacion);
+        if (notificacion.getEstado() != EstadoNotificacion.PENDIENTE) {
+            return notificacion;
+        }
+        intentarEnvio(notificacion);
+        return notificacionGateway.guardar(notificacion);
     }
 
     /** Vuelve a enviar una notificación FALLIDA, hasta completar el máximo de intentos. */
@@ -122,11 +137,17 @@ public class NotificacionUseCase {
         for (TipoNotificacion tipo : TipoNotificacion.values()) {
             porTipo.put(tipo, todas.stream().filter(notificacion -> notificacion.getTipo() == tipo).count());
         }
-        long enviadas = todas.stream()
-                .filter(notificacion -> notificacion.getEstado() == EstadoNotificacion.ENVIADA).count();
         long noLeidas = todas.stream()
                 .filter(notificacion -> !Boolean.TRUE.equals(notificacion.getLeida())).count();
-        return new EstadisticasNotificaciones(todas.size(), enviadas, todas.size() - enviadas, noLeidas, porTipo);
+        return new EstadisticasNotificaciones(todas.size(),
+                contarEstado(todas, EstadoNotificacion.ENVIADA),
+                contarEstado(todas, EstadoNotificacion.FALLIDA),
+                contarEstado(todas, EstadoNotificacion.PENDIENTE),
+                noLeidas, porTipo);
+    }
+
+    private long contarEstado(List<Notificacion> todas, EstadoNotificacion estado) {
+        return todas.stream().filter(notificacion -> notificacion.getEstado() == estado).count();
     }
 
     // ---------------------------------------------------------------
