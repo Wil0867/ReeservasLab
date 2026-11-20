@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -81,6 +82,13 @@ public class ReservaDataGatewayImpl implements ReservaGateway {
     @Override
     public boolean existeCruce(Long idLaboratorio, LocalDate fecha, LocalTime horaInicio, LocalTime horaFin) {
         return reservaRepository.existeCruce(idLaboratorio, fecha, ReglasReserva.ESTADOS_ACTIVOS, horaInicio, horaFin);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<Long> idsLaboratoriosOcupados(LocalDate fecha, LocalTime horaInicio, LocalTime horaFin) {
+        return Set.copyOf(reservaRepository.idsLaboratoriosConCruce(
+                fecha, ReglasReserva.ESTADOS_ACTIVOS, horaInicio, horaFin));
     }
 
     @Override

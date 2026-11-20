@@ -4,11 +4,15 @@ import com.reservaslab.reservas.domain.Excepciones.ServicioExternoException;
 import com.reservaslab.reservas.domain.model.gateway.NotificacionGateway;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-/** Adaptador que le pide al microservicio Notificaciones que envíe un correo. */
+/**
+ * Adaptador que le pide al microservicio Notificaciones que envíe un correo.
+ * Es asíncrono: la reserva responde sin esperar a Notificaciones ni a Brevo.
+ */
 @Component
 public class NotificacionGatewayImpl implements NotificacionGateway {
 
@@ -23,6 +27,7 @@ public class NotificacionGatewayImpl implements NotificacionGateway {
     }
 
     @Override
+    @Async
     public void notificar(Long idUsuario, String asunto, String mensaje) {
         try {
             notificacionesRestClient.post()

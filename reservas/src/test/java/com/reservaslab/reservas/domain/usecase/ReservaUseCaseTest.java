@@ -225,7 +225,8 @@ class ReservaUseCaseTest {
 
     @Test
     void crearRechazaHorarioOcupado() {
-        when(reservaGateway.crearSiNoHayCruce(any())).thenReturn(Optional.empty());
+        // doReturn no ejecuta el stub del @BeforeEach (que fallaría con argumento null)
+        doReturn(Optional.empty()).when(reservaGateway).crearSiNoHayCruce(any());
 
         assertThrows(ReglaDeNegocioException.class, () -> useCase.crear(solicitud()));
         verify(notificacionGateway, never()).notificar(anyLong(), anyString(), anyString());

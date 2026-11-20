@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RequiredArgsConstructor
 public class LaboratorioUseCase {
@@ -131,10 +132,11 @@ public class LaboratorioUseCase {
         if (dia.getDayOfWeek() == DayOfWeek.SUNDAY || esFestivo(dia)) {
             return List.of();
         }
+        // Una sola consulta para todos los laboratorios, en vez de una por laboratorio
+        Set<Long> ocupados = reservaGateway.idsLaboratoriosOcupados(dia, horaInicio, horaFin);
         return laboratorioGateway.listar().stream()
                 .filter(laboratorio -> laboratorio.getEstado() == EstadoLaboratorio.DISPONIBLE)
-                .filter(laboratorio -> !reservaGateway.existeCruce(
-                        laboratorio.getIdLaboratorio(), dia, horaInicio, horaFin))
+                .filter(laboratorio -> !ocupados.contains(laboratorio.getIdLaboratorio()))
                 .toList();
     }
 

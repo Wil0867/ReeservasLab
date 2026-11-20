@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ReservaGateway {
 
@@ -24,6 +25,9 @@ public interface ReservaGateway {
     List<Reserva> listarActivasPorLaboratorioYFecha(Long idLaboratorio, LocalDate fecha);
 
     boolean existeCruce(Long idLaboratorio, LocalDate fecha, LocalTime horaInicio, LocalTime horaFin);
+
+    /** Ids de los laboratorios con reservas activas que se cruzan con el horario (una sola consulta). */
+    Set<Long> idsLaboratoriosOcupados(LocalDate fecha, LocalTime horaInicio, LocalTime horaFin);
 
     boolean existenActivasPorLaboratorio(Long idLaboratorio);
 

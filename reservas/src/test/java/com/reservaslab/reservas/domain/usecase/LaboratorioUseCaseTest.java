@@ -252,8 +252,8 @@ class LaboratorioUseCaseTest {
         Laboratorio ocupado = laboratorio(2L, EstadoLaboratorio.DISPONIBLE);
         Laboratorio enMantenimiento = laboratorio(3L, EstadoLaboratorio.MANTENIMIENTO);
         when(laboratorioGateway.listar()).thenReturn(List.of(libre, ocupado, enMantenimiento));
-        when(reservaGateway.existeCruce(1L, VIERNES, LocalTime.of(8, 0), LocalTime.of(10, 0))).thenReturn(false);
-        when(reservaGateway.existeCruce(2L, VIERNES, LocalTime.of(8, 0), LocalTime.of(10, 0))).thenReturn(true);
+        when(reservaGateway.idsLaboratoriosOcupados(VIERNES, LocalTime.of(8, 0), LocalTime.of(10, 0)))
+                .thenReturn(java.util.Set.of(2L));
 
         List<Laboratorio> disponibles = useCase.listarDisponibles(VIERNES, LocalTime.of(8, 0), LocalTime.of(10, 0));
 

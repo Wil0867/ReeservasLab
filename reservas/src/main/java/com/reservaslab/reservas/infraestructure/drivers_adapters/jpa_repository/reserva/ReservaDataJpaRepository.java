@@ -28,6 +28,19 @@ public interface ReservaDataJpaRepository extends JpaRepository<ReservaData, Lon
                         @Param("horaInicio") LocalTime horaInicio,
                         @Param("horaFin") LocalTime horaFin);
 
+    @Query("""
+            SELECT DISTINCT r.laboratorio.idLaboratorio
+            FROM ReservaData r
+            WHERE r.fecha = :fecha
+              AND r.estado IN :estados
+              AND r.horaInicio < :horaFin
+              AND r.horaFin > :horaInicio
+            """)
+    List<Long> idsLaboratoriosConCruce(@Param("fecha") LocalDate fecha,
+                                       @Param("estados") Collection<EstadoReserva> estados,
+                                       @Param("horaInicio") LocalTime horaInicio,
+                                       @Param("horaFin") LocalTime horaFin);
+
     List<ReservaData> findByIdUsuarioOrderByFechaDescHoraInicioDesc(Long idUsuario);
 
     List<ReservaData> findByLaboratorio_IdLaboratorioAndFechaAndEstadoInOrderByHoraInicioAsc(

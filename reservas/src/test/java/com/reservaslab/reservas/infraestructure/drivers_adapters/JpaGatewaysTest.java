@@ -151,6 +151,15 @@ class JpaGatewaysTest {
     }
 
     @Test
+    void idsLaboratoriosOcupadosUsaUnaSolaConsulta() {
+        when(reservaRepository.idsLaboratoriosConCruce(FECHA, ReglasReserva.ESTADOS_ACTIVOS, OCHO, DIEZ))
+                .thenReturn(List.of(2L, 5L));
+
+        assertEquals(java.util.Set.of(2L, 5L), reservaGateway.idsLaboratoriosOcupados(FECHA, OCHO, DIEZ));
+        verify(reservaRepository, times(1)).idsLaboratoriosConCruce(FECHA, ReglasReserva.ESTADOS_ACTIVOS, OCHO, DIEZ);
+    }
+
+    @Test
     void actualizarEstadoCambiaYGuarda() {
         when(reservaRepository.findById(10L)).thenReturn(Optional.of(reservaData(EstadoReserva.PENDIENTE)));
         when(reservaRepository.save(any())).thenAnswer(invocacion -> invocacion.getArgument(0));
