@@ -64,20 +64,19 @@ class NotificacionUseCaseTest {
     // ---------------- enviar ----------------
 
     @Test
-    void enviarRegistraPendienteSinLlamarAlProveedor() {
+    void enviarConDestinatarioNoConsultaUsuarios() {
         Notificacion resultado = useCase.enviar(solicitud(" ana@correo.com "));
 
         assertNull(resultado.getIdNotificacion());
         assertEquals("ana@correo.com", resultado.getDestinatario());
         assertEquals("Reserva registrada #10", resultado.getAsunto());
         assertEquals("Detalle de la reserva", resultado.getMensaje());
-        assertEquals(EstadoNotificacion.PENDIENTE, resultado.getEstado());
-        assertEquals(0, resultado.getIntentos());
+        assertEquals(EstadoNotificacion.ENVIADA, resultado.getEstado());
+        assertEquals(1, resultado.getIntentos());
         assertFalse(resultado.getLeida());
         assertEquals(AHORA, resultado.getFechaCreacion());
         assertNull(resultado.getDetalleError());
-        verify(notificacionGateway).guardar(resultado);
-        verify(correoGateway, never()).enviar(anyString(), anyString(), anyString());
+        verify(correoGateway).enviar("ana@correo.com", "Reserva registrada #10", "Detalle de la reserva");
         verify(usuarioGateway, never()).consultarCorreo(anyLong());
     }
 
@@ -97,45 +96,17 @@ class NotificacionUseCaseTest {
         assertEquals(TipoNotificacion.GENERAL, useCase.enviar(sinTipo).getTipo());
     }
 
-    // ---------------- procesarEnvio (segundo plano) ----------------
-
     @Test
-    void procesarEnvioEnviaYMarcaEnviada() {
-        Notificacion pendiente = guardada(EstadoNotificacion.PENDIENTE, false, 0, TipoNotificacion.RESERVA);
-        when(notificacionGateway.buscarPorId(5L)).thenReturn(Optional.of(pendiente));
-
-        Notificacion resultado = useCase.procesarEnvio(5L);
-
-        assertEquals(EstadoNotificacion.ENVIADA, resultado.getEstado());
-        assertEquals(1, resultado.getIntentos());
-        assertNull(resultado.getDetalleError());
-        verify(correoGateway).enviar("ana@correo.com", "Asunto", "Mensaje");
-        verify(notificacionGateway).guardar(pendiente);
-    }
-
-    @Test
-    void procesarEnvioRegistraFallidaSiElProveedorRechaza() {
-        when(notificacionGateway.buscarPorId(5L))
-                .thenReturn(Optional.of(guardada(EstadoNotificacion.PENDIENTE, false, 0, TipoNotificacion.RESERVA)));
+    void enviarRegistraFallidaSiElProveedorRechaza() {
         doThrow(new ServicioExternoException("x".repeat(600), null))
                 .when(correoGateway).enviar(anyString(), anyString(), anyString());
 
-        Notificacion resultado = useCase.procesarEnvio(5L);
+        Notificacion resultado = useCase.enviar(solicitud("ana@correo.com"));
 
         assertEquals(EstadoNotificacion.FALLIDA, resultado.getEstado());
         assertEquals(1, resultado.getIntentos());
         assertEquals(500, resultado.getDetalleError().length());     // el error se recorta para la columna
         verify(notificacionGateway).guardar(resultado);              // igual queda en el historial
-    }
-
-    @Test
-    void procesarEnvioNoHaceNadaSiNoEstaPendiente() {
-        Notificacion enviada = guardada(EstadoNotificacion.ENVIADA, false, 1, TipoNotificacion.RESERVA);
-        when(notificacionGateway.buscarPorId(5L)).thenReturn(Optional.of(enviada));
-
-        assertSame(enviada, useCase.procesarEnvio(5L));
-        verify(correoGateway, never()).enviar(anyString(), anyString(), anyString());
-        verify(notificacionGateway, never()).guardar(any());
     }
 
     @Test
@@ -275,19 +246,17 @@ class NotificacionUseCaseTest {
                 guardada(EstadoNotificacion.ENVIADA, true, 1, TipoNotificacion.RESERVA),
                 guardada(EstadoNotificacion.ENVIADA, false, 1, TipoNotificacion.RESERVA),
                 guardada(EstadoNotificacion.FALLIDA, false, 3, TipoNotificacion.CUENTA),
-                guardada(EstadoNotificacion.PENDIENTE, false, 0, TipoNotificacion.GENERAL),
                 sinIndicador));
 
         EstadisticasNotificaciones estadisticas = useCase.estadisticas();
 
-        assertEquals(5, estadisticas.total());
+        assertEquals(4, estadisticas.total());
         assertEquals(3, estadisticas.enviadas());
         assertEquals(1, estadisticas.fallidas());
-        assertEquals(1, estadisticas.pendientes());
-        assertEquals(4, estadisticas.noLeidas());
+        assertEquals(3, estadisticas.noLeidas());
         assertEquals(2L, estadisticas.porTipo().get(TipoNotificacion.RESERVA));
         assertEquals(1L, estadisticas.porTipo().get(TipoNotificacion.CUENTA));
         assertEquals(0L, estadisticas.porTipo().get(TipoNotificacion.RECORDATORIO));
-        assertEquals(2L, estadisticas.porTipo().get(TipoNotificacion.GENERAL));
+        assertEquals(1L, estadisticas.porTipo().get(TipoNotificacion.GENERAL));
     }
 }
