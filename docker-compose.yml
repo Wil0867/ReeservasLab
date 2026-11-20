@@ -1,0 +1,61 @@
+# Todo el proyecto en tu computador con un solo comando:  docker compose up --build
+# (opcional: para probar en local sin instalar nada más que Docker)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: reservas_lab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reservas_lab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  usuarios:
+    build: ./usuarios
+    environment:
+      PORT: 8080
+      DB_URL: jdbc:postgresql://db:5432/reservas_lab
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  notificaciones:
+    build: ./notificaciones
+    environment:
+      PORT: 8084
+      DB_URL: jdbc:postgresql://db:5432/reservas_lab
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      USUARIOS_URL: http://usuarios:8080
+      # Se leen de un archivo .env junto a este docker-compose.yml (no lo subas a GitHub)
+      BREVO_API_KEY: ${BREVO_API_KEY:-sin-clave}
+      BREVO_REMITENTE: ${BREVO_REMITENTE:-sin-remitente@correo.com}
+    ports:
+      - "8084:8084"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  reservas:
+    build: ./reservas
+    environment:
+      PORT: 8083
+      DB_URL: jdbc:postgresql://db:5432/reservas_lab
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      USUARIOS_URL: http://usuarios:8080
+      NOTIFICACIONES_URL: http://notificaciones:8084
+    ports:
+      - "8083:8083"
+    depends_on:
+      db:
+        condition: service_healthy

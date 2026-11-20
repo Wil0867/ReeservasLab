@@ -1,0 +1,61 @@
+# Blueprint de Render: crea los 3 microservicios de una vez.
+# Render -> New -> Blueprint -> elige este repositorio.
+# Las variables con "sync: false" te las pide Render al crear el Blueprint.
+services:
+  - type: web
+    name: reservaslab-usuarios
+    runtime: docker
+    plan: free
+    region: virginia
+    rootDir: usuarios
+    dockerfilePath: ./Dockerfile   # relativo a rootDir
+    healthCheckPath: /api/usuarios/estadisticas
+    envVars:
+      - key: DB_URL          # jdbc:postgresql://<host-de-neon>/<base>?sslmode=require
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+  - type: web
+    name: reservaslab-notificaciones
+    runtime: docker
+    plan: free
+    region: virginia
+    rootDir: notificaciones
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/notificaciones/estadisticas
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: USUARIOS_URL    # https://reservaslab-usuarios.onrender.com
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_REMITENTE # el correo que verificaste en Brevo
+        sync: false
+
+  - type: web
+    name: reservaslab-reservas
+    runtime: docker
+    plan: free
+    region: virginia
+    rootDir: reservas
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/laboratorios/lista
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: USUARIOS_URL        # https://reservaslab-usuarios.onrender.com
+        sync: false
+      - key: NOTIFICACIONES_URL  # https://reservaslab-notificaciones.onrender.com
+        sync: false

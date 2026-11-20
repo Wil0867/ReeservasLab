@@ -1,0 +1,9 @@
+target/
+.idea/
+*.iml
+.env
+
+# Logs y archivos locales
+*.log
+.env.*
+!.env.example
