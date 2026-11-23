@@ -9,7 +9,7 @@ services:
     region: virginia
     rootDir: usuarios
     dockerfilePath: ./Dockerfile   # relativo a rootDir
-    healthCheckPath: /api/usuarios/estadisticas
+    healthCheckPath: /api/ping   # no consulta la base
     envVars:
       - key: DB_URL          # jdbc:postgresql://<host-de-neon>/<base>?sslmode=require
         sync: false
@@ -25,7 +25,7 @@ services:
     region: virginia
     rootDir: notificaciones
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/notificaciones/estadisticas
+    healthCheckPath: /api/ping
     envVars:
       - key: DB_URL
         sync: false
@@ -47,7 +47,7 @@ services:
     region: virginia
     rootDir: reservas
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/laboratorios/lista
+    healthCheckPath: /api/ping
     envVars:
       - key: DB_URL
         sync: false
