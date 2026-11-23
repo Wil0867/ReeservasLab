@@ -11,6 +11,8 @@ name: Mantener servicios activos
 on:
   schedule:
     - cron: "*/10 13-20 * * 1-5"   # GitHub usa UTC
+    # SOLO HOY (lun 23/11/2026, presentación): se extiende de 16:00 a 18:00 hora Colombia. Borrar después.
+    - cron: "*/10 21-22 23 11 *"
   workflow_dispatch:
 
 jobs:
