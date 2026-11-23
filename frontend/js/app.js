@@ -6,17 +6,19 @@
   // Configuración
   // ------------------------------------------------------------------
   const ENTORNOS = {
-    render: {
+    produccion: {
       usuarios: "https://reservaslab-usuarios-qw7i.onrender.com",
       reservas: "https://reservaslab-reservas-qw7i.onrender.com",
       notificaciones: "https://reservaslab-notificaciones-qw7i.onrender.com",
     },
-    local: {
+    desarrollo: {
       usuarios: "http://localhost:8080",
       reservas: "http://localhost:8083",
       notificaciones: "http://localhost:8084",
     },
   };
+  // Servida desde localhost (Live Server, etc.) usa los servicios locales; en cualquier otro sitio, los publicados
+  const SERVIDORES = ["localhost", "127.0.0.1"].includes(location.hostname) ? ENTORNOS.desarrollo : ENTORNOS.produccion;
   const APERTURA = 7, CIERRE = 21, MAX_HORAS = 4;
   const ZONA = "America/Bogota";
 
@@ -56,7 +58,6 @@
   // Estado
   // ------------------------------------------------------------------
   const estado = {
-    entorno: almacen.leer("rl.entorno") || "render",
     usuario: almacen.leer("rl.usuario"),
     laboratorios: [],
     agenda: null,          // Disponibilidad actual
@@ -77,9 +78,7 @@
       $("#cargando-texto").textContent = "Cargando…";
       clearTimeout(avisoLento);
       avisoLento = setTimeout(() => {
-        $("#cargando-texto").textContent = estado.entorno === "render"
-          ? "El servidor se está despertando (plan gratis de Render). Puede tardar hasta un minuto…"
-          : "Esperando respuesta del servidor local…";
+        $("#cargando-texto").textContent = "Esto está tardando un poco más de lo normal. Espera un momento…";
       }, 3500);
     } else {
       pendientes = 0;
@@ -89,7 +88,7 @@
   }
 
   async function api(servicio, ruta, { metodo = "GET", cuerpo } = {}) {
-    const url = ENTORNOS[estado.entorno][servicio] + ruta;
+    const url = SERVIDORES[servicio] + ruta;
     cargando(true);
     try {
       let res;
@@ -100,13 +99,13 @@
           body: cuerpo ? JSON.stringify(cuerpo) : undefined,
         });
       } catch {
-        throw new Error(`No hay conexión con el servicio ${servicio}. ¿Está encendido y desplegado con CORS?`);
+        throw new Error("No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.");
       }
       const texto = await res.text();
       let datos = null;
       try { datos = texto ? JSON.parse(texto) : null; } catch { datos = texto; }
       if (!res.ok) {
-        throw new Error((datos && datos.mensaje) || `Error ${res.status} en ${servicio}`);
+        throw new Error((datos && datos.mensaje) || "Ocurrió un error inesperado. Inténtalo de nuevo.");
       }
       return datos;
     } finally {
@@ -125,21 +124,6 @@
     setTimeout(() => t.remove(), tipo === "error" ? 6500 : 4000);
   }
   const fallo = (e) => toast(e.message, "error");
-
-  // ------------------------------------------------------------------
-  // Entorno (Render / Local)
-  // ------------------------------------------------------------------
-  function pintarEntorno() {
-    $$("[data-entorno]").forEach((b) => b.classList.toggle("activo", b.dataset.entorno === estado.entorno));
-  }
-  $$("[data-entorno]").forEach((b) => b.addEventListener("click", () => {
-    estado.entorno = b.dataset.entorno;
-    almacen.guardar("rl.entorno", estado.entorno);
-    pintarEntorno();
-    toast(`Usando servidores ${estado.entorno === "render" ? "de Render" : "locales"}`);
-    estado.agenda = null;
-    if (estado.usuario) arrancarApp();
-  }));
 
   // ------------------------------------------------------------------
   // Acceso
@@ -742,6 +726,6 @@
   // ------------------------------------------------------------------
   // Inicio
   // ------------------------------------------------------------------
-  pintarEntorno();
+  almacen.borrar("rl.entorno");      // preferencia de versiones anteriores
   if (estado.usuario) mostrarApp(); else mostrarAcceso();
 })();

@@ -65,11 +65,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: 
 .boton--peligro { color: var(--rojo); border-color: var(--rojo); }
 .enlace { background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
 
-.interruptor { display: inline-flex; border: var(--linea); }
-.interruptor button { border: 0; background: transparent; padding: 6px 12px; font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; }
-.interruptor button.activo { background: var(--tinta); color: var(--amarillo); }
-.interruptor--oscuro { border-color: rgba(255,255,255,.35); }
-.interruptor--oscuro button.activo { background: var(--amarillo); color: var(--bosque); }
 
 .chip input { position: absolute; opacity: 0; pointer-events: none; }
 .chip span { display: inline-block; padding: 8px 14px; border: 1.5px solid var(--tinta); font-weight: 600; font-size: 13px; transition: background .2s; }
@@ -108,7 +103,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: 
 .pestana.activa { color: var(--tinta); border-bottom-color: var(--verde); }
 .formulario { display: flex; flex-direction: column; gap: 22px; }
 .formulario .boton { align-self: flex-start; margin-top: 6px; }
-.entorno { display: flex; align-items: center; gap: 12px; color: var(--gris); margin-top: auto; }
 
 /* ============================ APP ============================ */
 .app { display: grid; grid-template-columns: minmax(260px, 3fr) 9fr; min-height: 100vh; }
