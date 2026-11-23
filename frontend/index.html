@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReservasLab · UdeC</title>
+  <meta name="description" content="Reserva de laboratorios de la Universidad de Cundinamarca">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<!-- ============================ ACCESO ============================ -->
+<section id="acceso" class="acceso" hidden>
+  <div class="acceso__manifiesto">
+    <header class="acceso__marca">
+      <span class="mono">UdeC — Universidad de Cundinamarca</span>
+      <span class="mono">Universidad Translocal del Siglo 21</span>
+    </header>
+
+    <h1 class="acceso__titulo">
+      Reserva<br>tu <em>laboratorio</em><br>sin filas.
+    </h1>
+
+    <ol class="acceso__sedes mono" aria-label="Sedes y seccionales">
+      <li>Fusagasugá</li><li>Girardot</li><li>Ubaté</li><li>Chía</li>
+      <li>Facatativá</li><li>Zipaquirá</li><li>Soacha</li>
+    </ol>
+
+    <dl class="acceso__reglas">
+      <div><dt class="mono">Horario</dt><dd>07:00 — 21:00</dd></div>
+      <div><dt class="mono">Máximo</dt><dd>4 h por reserva</dd></div>
+      <div><dt class="mono">Cerrado</dt><dd>Domingos y festivos</dd></div>
+    </dl>
+  </div>
+
+  <div class="acceso__panel">
+    <div class="pestanas" role="tablist">
+      <button class="pestana activa" role="tab" data-pestana="login">01 · Ingresar</button>
+      <button class="pestana" role="tab" data-pestana="registro">02 · Crear cuenta</button>
+    </div>
+
+    <form id="form-login" class="formulario" data-panel="login">
+      <label class="campo"><span class="mono">Correo institucional</span>
+        <input type="email" name="correo" required autocomplete="email" placeholder="nombre@ucundinamarca.edu.co"></label>
+      <label class="campo"><span class="mono">Clave</span>
+        <input type="password" name="clave" required autocomplete="current-password" minlength="6"></label>
+      <button class="boton boton--primario" type="submit">Entrar <span aria-hidden="true">→</span></button>
+    </form>
+
+    <form id="form-registro" class="formulario" data-panel="registro" hidden>
+      <label class="campo"><span class="mono">Nombre completo</span>
+        <input type="text" name="nombre" required autocomplete="name"></label>
+      <label class="campo"><span class="mono">Correo</span>
+        <input type="email" name="correo" required autocomplete="email"></label>
+      <label class="campo"><span class="mono">Clave (mín. 6)</span>
+        <input type="password" name="clave" required minlength="6" autocomplete="new-password"></label>
+      <fieldset class="campo campo--roles">
+        <legend class="mono">Rol</legend>
+        <label class="chip"><input type="radio" name="rol" value="ESTUDIANTE" checked><span>Estudiante</span></label>
+        <label class="chip"><input type="radio" name="rol" value="DOCENTE"><span>Docente</span></label>
+        <label class="chip"><input type="radio" name="rol" value="ADMIN"><span>Admin</span></label>
+      </fieldset>
+      <button class="boton boton--primario" type="submit">Crear cuenta <span aria-hidden="true">→</span></button>
+    </form>
+
+    <div class="entorno">
+      <span class="mono">Servidor</span>
+      <div class="interruptor" role="radiogroup" aria-label="Servidor de la API">
+        <button data-entorno="render" class="activo">Render</button>
+        <button data-entorno="local">Local</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ APLICACIÓN ============================ -->
+<div id="app" class="app" hidden>
+  <aside class="riel">
+    <div class="riel__marca">
+      <span class="mono">UdeC · Laboratorios</span>
+      <strong>Reservas<em>Lab</em></strong>
+    </div>
+
+    <nav class="riel__nav" aria-label="Secciones">
+      <a href="#agenda" data-vista="agenda"><span class="mono">01</span>Agenda</a>
+      <a href="#libres" data-vista="libres"><span class="mono">02</span>Buscar libres</a>
+      <a href="#mis-reservas" data-vista="mis-reservas"><span class="mono">03</span>Mis reservas</a>
+      <a href="#notificaciones" data-vista="notificaciones"><span class="mono">04</span>Avisos <b id="contador-avisos" class="contador" hidden>0</b></a>
+      <a href="#admin" data-vista="admin" data-solo-admin hidden><span class="mono">05</span>Administración</a>
+    </nav>
+
+    <div class="riel__usuario">
+      <span class="mono" id="usuario-rol">—</span>
+      <strong id="usuario-nombre">—</strong>
+      <span class="mono riel__correo" id="usuario-correo"></span>
+      <div class="riel__acciones">
+        <div class="interruptor interruptor--oscuro" role="radiogroup" aria-label="Servidor de la API">
+          <button data-entorno="render" class="activo">Render</button>
+          <button data-entorno="local">Local</button>
+        </div>
+        <button id="salir" class="enlace">Salir ↗</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="lienzo">
+
+    <!-- 01 AGENDA -->
+    <section class="vista" id="vista-agenda" data-vista="agenda">
+      <header class="vista__cabeza">
+        <span class="vista__num">01</span>
+        <div>
+          <h2>Agenda del <em>laboratorio</em></h2>
+          <p>Elige un laboratorio y un día. Toca una hora libre para empezar y otra para terminar.</p>
+        </div>
+      </header>
+
+      <form id="form-agenda" class="filtros">
+        <label class="campo"><span class="mono">Laboratorio</span><select name="idLaboratorio" id="sel-laboratorio" required></select></label>
+        <label class="campo"><span class="mono">Fecha</span><input type="date" name="fecha" id="agenda-fecha" required></label>
+        <button class="boton" type="submit">Ver agenda</button>
+      </form>
+
+      <div class="agenda">
+        <div class="agenda__principal">
+          <div id="agenda-meta" class="agenda__meta"></div>
+          <ol id="agenda-franjas" class="franjas" aria-label="Franjas horarias"></ol>
+          <ul class="leyenda mono">
+            <li><i class="punto punto--libre"></i>Libre</li>
+            <li><i class="punto punto--ocupada"></i>Ocupada</li>
+            <li><i class="punto punto--sel"></i>Tu selección</li>
+          </ul>
+        </div>
+
+        <form id="form-reserva" class="solicitud">
+          <span class="mono solicitud__tag">Solicitud</span>
+          <p class="solicitud__resumen" id="solicitud-resumen">Selecciona un horario en la agenda.</p>
+          <label class="campo"><span class="mono">Personas</span><input type="number" name="cantidadPersonas" min="1" value="1" required></label>
+          <label class="campo"><span class="mono">Motivo</span><textarea name="motivo" rows="3" required placeholder="Práctica de redes, tutoría…"></textarea></label>
+          <button class="boton boton--primario" type="submit" id="btn-reservar" disabled>Reservar →</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 02 LIBRES -->
+    <section class="vista" id="vista-libres" data-vista="libres" hidden>
+      <header class="vista__cabeza">
+        <span class="vista__num">02</span>
+        <div>
+          <h2>¿Qué está <em>libre</em>?</h2>
+          <p>Todos los laboratorios habilitados sin reservas en el horario que buscas.</p>
+        </div>
+      </header>
+      <form id="form-libres" class="filtros">
+        <label class="campo"><span class="mono">Fecha</span><input type="date" name="fecha" required></label>
+        <label class="campo"><span class="mono">Desde</span><select name="horaInicio" data-horas="inicio"></select></label>
+        <label class="campo"><span class="mono">Hasta</span><select name="horaFin" data-horas="fin"></select></label>
+        <button class="boton" type="submit">Buscar</button>
+      </form>
+      <ol id="lista-libres" class="indice"></ol>
+    </section>
+
+    <!-- 03 MIS RESERVAS -->
+    <section class="vista" id="vista-mis-reservas" data-vista="mis-reservas" hidden>
+      <header class="vista__cabeza">
+        <span class="vista__num">03</span>
+        <div>
+          <h2>Mis <em>reservas</em></h2>
+          <p>Tu historial, de la más reciente a la más antigua.</p>
+        </div>
+      </header>
+      <div class="chips" id="filtro-estados" role="group" aria-label="Filtrar por estado">
+        <button class="chip-btn activo" data-estado="">Todas</button>
+        <button class="chip-btn" data-estado="PENDIENTE">Pendientes</button>
+        <button class="chip-btn" data-estado="CONFIRMADA">Confirmadas</button>
+        <button class="chip-btn" data-estado="CANCELADA">Canceladas</button>
+        <button class="chip-btn" data-estado="FINALIZADA">Finalizadas</button>
+      </div>
+      <ol id="lista-reservas" class="registro"></ol>
+    </section>
+
+    <!-- 04 AVISOS -->
+    <section class="vista" id="vista-notificaciones" data-vista="notificaciones" hidden>
+      <header class="vista__cabeza">
+        <span class="vista__num">04</span>
+        <div>
+          <h2>Tus <em>avisos</em></h2>
+          <p>Los correos que el sistema te ha enviado por cada cambio en tus reservas.</p>
+        </div>
+      </header>
+      <ol id="lista-avisos" class="avisos"></ol>
+    </section>
+
+    <!-- 05 ADMIN -->
+    <section class="vista" id="vista-admin" data-vista="admin" hidden>
+      <header class="vista__cabeza">
+        <span class="vista__num">05</span>
+        <div>
+          <h2>Panel de <em>administración</em></h2>
+          <p>Laboratorios, estado de las reservas y salud del envío de correos.</p>
+        </div>
+      </header>
+
+      <div class="admin">
+        <div class="admin__labs">
+          <h3 class="subtitulo">Laboratorios</h3>
+          <ol id="admin-labs" class="indice indice--admin"></ol>
+          <form id="form-lab" class="filtros filtros--lab">
+            <label class="campo"><span class="mono">Nombre</span><input name="nombre" required></label>
+            <label class="campo"><span class="mono">Ubicación</span><input name="ubicacion" required></label>
+            <label class="campo"><span class="mono">Capacidad</span><input name="capacidad" type="number" min="1" required></label>
+            <button class="boton" type="submit">+ Agregar</button>
+          </form>
+
+          <h3 class="subtitulo">Gestionar una reserva</h3>
+          <form id="form-gestion" class="filtros">
+            <label class="campo"><span class="mono">N.º de reserva</span><input name="idReserva" type="number" min="1" required></label>
+            <button class="boton" type="submit">Buscar</button>
+          </form>
+          <div id="gestion-resultado"></div>
+        </div>
+
+        <aside class="admin__datos">
+          <div class="bloque bloque--verde" id="stats-usuarios"></div>
+          <div class="bloque bloque--amarillo" id="stats-avisos"></div>
+          <div class="bloque" id="avisos-fallidos"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="cargando" class="cargando" hidden><span></span><p class="mono" id="cargando-texto">Cargando…</p></div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
