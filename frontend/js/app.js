@@ -189,12 +189,16 @@
   function mostrarApp() {
     $("#acceso").hidden = true;
     $("#app").hidden = false;
+    pintarUsuario();
+    arrancarApp();
+  }
+
+  function pintarUsuario() {
     const u = estado.usuario;
     $("#usuario-nombre").textContent = u.nombre;
     $("#usuario-correo").textContent = u.correo || "";
     $("#usuario-rol").textContent = `${u.rol} · #${u.idUsuario}`;
     $$("[data-solo-admin]").forEach((n) => { n.hidden = u.rol !== "ADMIN"; });
-    arrancarApp();
   }
 
   // ------------------------------------------------------------------
@@ -205,6 +209,7 @@
     libres: () => {},
     "mis-reservas": cargarReservas,
     notificaciones: cargarAvisos,
+    cuenta: cargarCuenta,
     admin: cargarAdmin,
   };
 
@@ -500,11 +505,142 @@
   // ------------------------------------------------------------------
   // 05 · Administración
   // ------------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // 05 · Mi cuenta
+  // ------------------------------------------------------------------
+  function llenarPerfil() {
+    const u = estado.usuario, f = $("#form-perfil");
+    f.nombre.value = u.nombre || "";
+    f.correo.value = u.correo || "";
+    $$("input[name=rol]", f).forEach((r) => { r.checked = r.value === u.rol; });
+    const esAdmin = u.rol === "ADMIN";
+    $("#perfil-roles").hidden = !esAdmin;
+    $("#perfil-rol-fijo").hidden = esAdmin;
+    $("#perfil-rol-fijo").textContent = `Tu rol es ${u.rol}. Solo un administrador puede cambiarlo.`;
+  }
+
+  async function cargarCuenta() {
+    llenarPerfil();
+    try {
+      const u = await api("usuarios", `/api/usuarios/buscar/${estado.usuario.idUsuario}`);
+      estado.usuario = { idUsuario: u.idUsuario, nombre: u.nombre, correo: u.correo, rol: u.rol };
+      almacen.guardar("rl.usuario", estado.usuario);
+      pintarUsuario();
+      llenarPerfil();
+    } catch (err) { fallo(err); }
+  }
+
+  $("#form-perfil").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const rol = estado.usuario.rol === "ADMIN" ? ($("input[name=rol]:checked", f)?.value || "ADMIN") : estado.usuario.rol;
+    if (estado.usuario.rol === "ADMIN" && rol !== "ADMIN"
+        && !confirm("Si dejas de ser ADMIN perderás el acceso al panel de administración. ¿Continuar?")) return;
+    try {
+      const u = await api("usuarios", `/api/usuarios/actualizar/${estado.usuario.idUsuario}`, {
+        metodo: "PUT",
+        cuerpo: { nombre: f.nombre.value, correo: f.correo.value, rol },
+      });
+      estado.usuario = { idUsuario: u.idUsuario, nombre: u.nombre, correo: u.correo, rol: u.rol };
+      almacen.guardar("rl.usuario", estado.usuario);
+      pintarUsuario();
+      llenarPerfil();
+      toast("Datos actualizados");
+    } catch (err) { fallo(err); }
+  });
+
+  $("#form-clave").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    if (f.claveNueva.value !== f.confirmacion.value) {
+      toast("La clave nueva y su confirmación no coinciden", "error");
+      f.confirmacion.focus();
+      return;
+    }
+    try {
+      const r = await api("usuarios", `/api/usuarios/${estado.usuario.idUsuario}/clave`, {
+        metodo: "PATCH",
+        cuerpo: { claveActual: f.claveActual.value, claveNueva: f.claveNueva.value },
+      });
+      toast(r.mensaje || "Clave actualizada");
+      f.reset();
+    } catch (err) { fallo(err); }
+  });
+
+  // ------------------------------------------------------------------
+  // 06 · Administración
+  // ------------------------------------------------------------------
   async function cargarAdmin() {
+    cargarUsuariosAdmin();
     await cargarLaboratorios();
     pintarLabsAdmin();
     cargarEstadisticas();
   }
+
+  // ---- usuarios ----
+  estado.usuariosAdmin = [];
+  estado.filtroUsuarios = "";
+
+  async function cargarUsuariosAdmin() {
+    try {
+      estado.usuariosAdmin = await api("usuarios", "/api/usuarios/lista");
+    } catch (err) { fallo(err); estado.usuariosAdmin = []; }
+    pintarUsuariosAdmin();
+  }
+
+  function pintarUsuariosAdmin() {
+    const texto = $("#buscar-usuario").value.trim().toLowerCase();
+    const visibles = estado.usuariosAdmin
+      .filter((u) => !texto || `${u.nombre} ${u.correo}`.toLowerCase().includes(texto))
+      .filter((u) => !estado.filtroUsuarios || (estado.filtroUsuarios === "activos") === Boolean(u.activo))
+      .sort((a, b) => a.idUsuario - b.idUsuario);
+    $("#admin-usuarios").innerHTML = visibles.length
+      ? visibles.map((u) => {
+          const yo = u.idUsuario === estado.usuario.idUsuario;
+          const est = u.activo ? "ACTIVO" : "INACTIVO";
+          const acciones = yo
+            ? `<span class="mono">Tú</span>`
+            : `<button class="boton boton--mini" data-usuario="${u.idUsuario}" data-accion-usuario="${u.activo ? "desactivar" : "activar"}">${u.activo ? "Desactivar" : "Activar"}</button>
+               <button class="boton boton--mini boton--peligro" data-usuario="${u.idUsuario}" data-accion-usuario="eliminar" aria-label="Eliminar ${esc(u.nombre)}">✕</button>`;
+          return `<li class="${yo ? "es-yo" : ""}">
+            <div><h4>${esc(u.nombre)}</h4><p class="mono" style="text-transform:none">${esc(u.correo)} · #${u.idUsuario}</p></div>
+            <span class="rol">${esc(u.rol)}</span>
+            <span class="estado estado--${est}">${est}</span>
+            <div class="acciones" style="display:flex;gap:8px">${acciones}</div>
+          </li>`;
+        }).join("")
+      : `<li class="vacio">${estado.usuariosAdmin.length ? "Ningún usuario coincide con la búsqueda." : "No hay usuarios registrados."}</li>`;
+  }
+
+  $("#buscar-usuario").addEventListener("input", pintarUsuariosAdmin);
+
+  $("#filtro-usuarios").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-filtro]");
+    if (!b) return;
+    estado.filtroUsuarios = b.dataset.filtro;
+    $$("#filtro-usuarios .chip-btn").forEach((x) => x.classList.toggle("activo", x === b));
+    pintarUsuariosAdmin();
+  });
+
+  $("#admin-usuarios").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-accion-usuario]");
+    if (!b) return;
+    const id = b.dataset.usuario, accion = b.dataset.accionUsuario;
+    const u = estado.usuariosAdmin.find((x) => String(x.idUsuario) === id);
+    try {
+      if (accion === "eliminar") {
+        if (!confirm(`¿Eliminar a ${u?.nombre || "este usuario"}? No se puede deshacer.`)) return;
+        await api("usuarios", `/api/usuarios/eliminar/${id}`, { metodo: "DELETE" });
+        toast("Usuario eliminado");
+      } else {
+        if (accion === "desactivar" && !confirm(`¿Desactivar a ${u?.nombre || "este usuario"}? No podrá iniciar sesión ni reservar.`)) return;
+        await api("usuarios", `/api/usuarios/${id}/${accion}`, { metodo: "PATCH" });
+        toast(accion === "activar" ? "Cuenta activada" : "Cuenta desactivada");
+      }
+      cargarUsuariosAdmin();
+      cargarEstadisticas();
+    } catch (err) { fallo(err); }
+  });
 
   function pintarLabsAdmin() {
     const lista = $("#admin-labs");

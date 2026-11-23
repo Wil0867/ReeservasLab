@@ -281,6 +281,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: 
 .ficha { border: var(--linea); padding: 18px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; box-shadow: 6px 6px 0 var(--verde); }
 .ficha h4 { margin: 0 0 4px; font-size: 18px; }
 .ficha p { margin: 0; color: var(--gris); }
+.fallida > span { min-width: 0; overflow-wrap: anywhere; }
+.filtros--usuarios { align-items: flex-end; margin-bottom: 4px; }
+.chips--compactos { border-top: var(--linea); border-bottom: var(--linea); margin: 0; flex: none; }
+.chips--compactos .chip-btn { padding: 10px 14px; }
+.indice li.es-yo { background: rgba(121,192,0,.12); }
+.indice .rol { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--verde-osc); }
+.estado--ACTIVO { color: var(--verde); }
+.estado--INACTIVO { color: var(--rojo); background: rgba(194,65,12,.08); }
+
+/* ---------- mi cuenta ---------- */
+.cuenta { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 56px; align-items: start; }
+.cuenta__datos { max-width: 620px; }
+.cuenta__datos .subtitulo { margin: 0; }
+.solicitud--clave { background: var(--papel); box-shadow: 8px 8px 0 var(--verde); transform: rotate(-.6deg); }
+.solicitud--clave .solicitud__tag { background: var(--verde); color: #fff; }
+.nota { margin: -8px 0 0; color: var(--gris); text-transform: none; letter-spacing: .02em; }
 
 /* ---------- carga y toasts ---------- */
 .cargando { position: fixed; inset: auto 24px 24px auto; z-index: 50; display: flex; align-items: center; gap: 12px; background: var(--tinta); color: var(--amarillo); padding: 12px 16px; max-width: min(420px, calc(100vw - 48px)); }
@@ -297,7 +313,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: 
 
 /* ============================ RESPONSIVE ============================ */
 @media (max-width: 1100px) {
-  .agenda, .admin { grid-template-columns: minmax(0, 1fr); }
+  .agenda, .admin, .cuenta { grid-template-columns: minmax(0, 1fr); }
   .solicitud, .admin__datos { position: static; transform: none; }
 }
 @media (max-width: 860px) {

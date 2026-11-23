@@ -89,7 +89,8 @@
       <a href="#libres" data-vista="libres"><span class="mono">02</span>Buscar libres</a>
       <a href="#mis-reservas" data-vista="mis-reservas"><span class="mono">03</span>Mis reservas</a>
       <a href="#notificaciones" data-vista="notificaciones"><span class="mono">04</span>Avisos <b id="contador-avisos" class="contador" hidden>0</b></a>
-      <a href="#admin" data-vista="admin" data-solo-admin hidden><span class="mono">05</span>Administración</a>
+      <a href="#cuenta" data-vista="cuenta"><span class="mono">05</span>Mi cuenta</a>
+      <a href="#admin" data-vista="admin" data-solo-admin hidden><span class="mono">06</span>Administración</a>
     </nav>
 
     <div class="riel__usuario">
@@ -194,13 +195,54 @@
       <ol id="lista-avisos" class="avisos"></ol>
     </section>
 
-    <!-- 05 ADMIN -->
-    <section class="vista" id="vista-admin" data-vista="admin" hidden>
+    <!-- 05 MI CUENTA -->
+    <section class="vista" id="vista-cuenta" data-vista="cuenta" hidden>
       <header class="vista__cabeza">
         <span class="vista__num">05</span>
         <div>
+          <h2>Mi <em>cuenta</em></h2>
+          <p>Actualiza tus datos o cambia tu clave. Los avisos de reservas llegan al correo que dejes aquí.</p>
+        </div>
+      </header>
+
+      <div class="cuenta">
+        <form id="form-perfil" class="formulario cuenta__datos">
+          <h3 class="subtitulo">Datos personales</h3>
+          <label class="campo"><span class="mono">Nombre completo</span>
+            <input name="nombre" required autocomplete="name"></label>
+          <label class="campo"><span class="mono">Correo</span>
+            <input name="correo" type="email" required autocomplete="email"></label>
+          <fieldset class="campo campo--roles" id="perfil-roles">
+            <legend class="mono">Rol</legend>
+            <label class="chip"><input type="radio" name="rol" value="ESTUDIANTE"><span>Estudiante</span></label>
+            <label class="chip"><input type="radio" name="rol" value="DOCENTE"><span>Docente</span></label>
+            <label class="chip"><input type="radio" name="rol" value="ADMIN"><span>Admin</span></label>
+          </fieldset>
+          <p class="nota mono" id="perfil-rol-fijo" hidden></p>
+          <button class="boton boton--primario" type="submit">Guardar cambios →</button>
+        </form>
+
+        <form id="form-clave" class="solicitud solicitud--clave">
+          <span class="mono solicitud__tag">Seguridad</span>
+          <p class="solicitud__resumen">Cambiar clave<em>Necesitas la actual. La nueva debe tener mínimo 6 caracteres y ser distinta.</em></p>
+          <label class="campo"><span class="mono">Clave actual</span>
+            <input type="password" name="claveActual" required autocomplete="current-password"></label>
+          <label class="campo"><span class="mono">Clave nueva</span>
+            <input type="password" name="claveNueva" required minlength="6" autocomplete="new-password"></label>
+          <label class="campo"><span class="mono">Repite la clave nueva</span>
+            <input type="password" name="confirmacion" required minlength="6" autocomplete="new-password"></label>
+          <button class="boton boton--primario" type="submit">Cambiar clave →</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 06 ADMIN -->
+    <section class="vista" id="vista-admin" data-vista="admin" hidden>
+      <header class="vista__cabeza">
+        <span class="vista__num">06</span>
+        <div>
           <h2>Panel de <em>administración</em></h2>
-          <p>Laboratorios, estado de las reservas y salud del envío de correos.</p>
+          <p>Usuarios, laboratorios, estado de las reservas y salud del envío de correos.</p>
         </div>
       </header>
 
@@ -214,6 +256,17 @@
             <label class="campo"><span class="mono">Capacidad</span><input name="capacidad" type="number" min="1" required></label>
             <button class="boton" type="submit">+ Agregar</button>
           </form>
+
+          <h3 class="subtitulo">Usuarios</h3>
+          <div class="filtros filtros--usuarios">
+            <label class="campo"><span class="mono">Buscar por nombre o correo</span><input id="buscar-usuario" type="search" placeholder="ana, @ucundinamarca…"></label>
+            <div class="chips chips--compactos" id="filtro-usuarios" role="group" aria-label="Filtrar usuarios">
+              <button class="chip-btn activo" data-filtro="">Todos</button>
+              <button class="chip-btn" data-filtro="activos">Activos</button>
+              <button class="chip-btn" data-filtro="inactivos">Inactivos</button>
+            </div>
+          </div>
+          <ol id="admin-usuarios" class="indice indice--admin"></ol>
 
           <h3 class="subtitulo">Gestionar una reserva</h3>
           <form id="form-gestion" class="filtros">
